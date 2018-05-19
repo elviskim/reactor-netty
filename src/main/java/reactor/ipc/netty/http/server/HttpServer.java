@@ -26,12 +26,14 @@ import javax.annotation.Nullable;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.ssl.SslContext;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 import reactor.ipc.netty.Connection;
 import reactor.ipc.netty.ConnectionObserver;
 import reactor.ipc.netty.DisposableServer;
 import reactor.ipc.netty.channel.BootstrapHandlers;
+import reactor.ipc.netty.tcp.SslProvider;
 import reactor.ipc.netty.tcp.TcpServer;
 import reactor.util.Logger;
 import reactor.util.Loggers;
@@ -269,6 +271,18 @@ public abstract class HttpServer {
 	}
 
 	/**
+	 * Enable default sslContext support. The default {@link SslContext} will be assigned
+	 * to with a default value of {@literal 10} seconds handshake timeout unless the
+	 * environment property {@literal reactor.ipc.netty.sslHandshakeTimeout} is set.
+	 * The default {@link SslContext} will contain HTTP/2 settings.
+	 *
+	 * @return a new {@link HttpServer}
+	 */
+	public final HttpServer secure() {
+		return tcpConfiguration(tcp -> tcp.secure(SSL_DEFAULT_SERVER_HTTP2_SPEC));
+	}
+
+	/**
 	 * The port to which this server should bind.
 	 *
 	 * @param port The port to bind to.
@@ -364,4 +378,6 @@ public abstract class HttpServer {
 
 	static final Function<TcpServer, TcpServer> FORWARD_ATTR_DISABLE =
 			tcp -> tcp.bootstrap(MAP_NO_FORWARDED);
+	static final Consumer<SslProvider.SslContextSpec> SSL_DEFAULT_SERVER_HTTP2_SPEC =
+			sslProviderBuilder -> sslProviderBuilder.sslContext(SslProvider.DEFAULT_SERVER_HTTP2_CONTEXT);
 }
