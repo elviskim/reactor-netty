@@ -39,6 +39,7 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SupportedCipherSuiteFilter;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 import reactor.core.Exceptions;
 import reactor.ipc.netty.ConnectionObserver;
@@ -641,6 +642,32 @@ public final class SslProvider {
 			sslContext = null;
 		}
 		DEFAULT_SERVER_HTTP2_CONTEXT = sslContext;
+	}
+
+	public static final SslContext DEFAULT_CLIENT_HTTP2_CONTEXT;
+	static {
+		SslContext sslCtx;
+		try {
+			io.netty.handler.ssl.SslProvider provider =
+			        OpenSsl.isAlpnSupported() ? io.netty.handler.ssl.SslProvider.OPENSSL :
+			                                    io.netty.handler.ssl.SslProvider.JDK;
+			sslCtx =
+					SslContextBuilder.forClient()
+					                 .sslProvider(provider)
+					                 .ciphers(Http2SecurityUtil.CIPHERS, SupportedCipherSuiteFilter.INSTANCE)
+					                 .trustManager(InsecureTrustManagerFactory.INSTANCE)
+					                 .applicationProtocolConfig(new ApplicationProtocolConfig(
+					                         ApplicationProtocolConfig.Protocol.ALPN,
+					                         ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
+					                         ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
+					                         ApplicationProtocolNames.HTTP_2,
+					                         ApplicationProtocolNames.HTTP_1_1))
+					                 .build();
+		}
+		catch (Exception e) {
+			sslCtx = null;
+		}
+		DEFAULT_CLIENT_HTTP2_CONTEXT = sslCtx;
 	}
 }
 
