@@ -44,9 +44,6 @@ import io.netty.channel.EventLoop;
 import io.netty.channel.FileRegion;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.ssl.ApplicationProtocolNames;
-import io.netty.handler.ssl.SslHandler;
-import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.util.ReferenceCountUtil;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscription;
@@ -90,8 +87,6 @@ final class ChannelOperationsHandler extends ChannelDuplexHandler
 
 	private Unsafe                      unsafe;
 
-	String protocol = ApplicationProtocolNames.HTTP_1_1;
-
 	volatile boolean innerActive;
 	volatile boolean removed;
 	volatile int     wip;
@@ -133,11 +128,6 @@ final class ChannelOperationsHandler extends ChannelDuplexHandler
 	@Override
 	final public void channelRead(ChannelHandlerContext ctx, Object msg) {
 		if (msg == null || msg == Unpooled.EMPTY_BUFFER || msg instanceof EmptyByteBuf) {
-			return;
-		}
-		if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
-			// Must be the HTTP/2 prefetch message
-			ctx.fireChannelRead(ReferenceCountUtil.retain(msg));
 			return;
 		}
 		try {
@@ -228,12 +218,6 @@ final class ChannelOperationsHandler extends ChannelDuplexHandler
 			((NettyPipeline.SendOptionsChangeEvent) evt).configurator()
 			                                            .accept(this);
 			return;
-		}
-		if (evt instanceof SslHandshakeCompletionEvent) {
-			if (((SslHandshakeCompletionEvent) evt).isSuccess()) {
-				SslHandler sslHandler = ctx.pipeline().get(SslHandler.class);
-				protocol = sslHandler.applicationProtocol();
-			}
 		}
 
 		ctx.fireUserEventTriggered(evt);

@@ -47,7 +47,7 @@ import static io.netty.handler.codec.http.HttpUtil.*;
  * Replace {@link io.netty.handler.codec.http.HttpServerKeepAliveHandler} with extra
  * handler management.
  */
-final class HttpRequestPipeliningHandler extends ChannelDuplexHandler
+final class HttpTrafficHandler extends ChannelDuplexHandler
 		implements Runnable, ChannelFutureListener {
 
 	static final String MULTIPART_PREFIX = "multipart";
@@ -66,7 +66,7 @@ final class HttpRequestPipeliningHandler extends ChannelDuplexHandler
 	boolean overflow;
 	boolean mustRecycleEncoder;
 
-	HttpRequestPipeliningHandler(ChannelOperations.OnSetup opsFactory, ConnectionObserver listener) {
+	HttpTrafficHandler(ChannelOperations.OnSetup opsFactory, ConnectionObserver listener) {
 		this.opsFactory = opsFactory;
 		this.listener = listener;
 	}
